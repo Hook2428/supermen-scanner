@@ -449,7 +449,7 @@
     // ── Ana yükleme ───────────────────────────────────────────────
     async function loadData() {
       try {
-        const url = 'https://raw.githubusercontent.com/kanca2428/supermen-scanner/main/data/signals.json?t=' + Date.now();
+        const url = 'https://raw.githubusercontent.com/hook2428/supermen-scanner/main/data/signals.json?t=' + Date.now();
         const res = await fetch(url);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
