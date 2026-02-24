@@ -1,0 +1,19 @@
+{
+  "lastRun": "2026-02-23T02:38:42.742Z",
+  "lastRunTimestamp": 1771809938105,
+  "duration": 63693,
+  "mode": "all",
+  "summary": {
+    "overall": {
+      "buy": 1,
+      "sell": 2,
+      "total": 3,
+      "sentiment": "AYI 🐻"
+    }
+  },
+  "crypto": {
+    "status": "scanning",
+    "updatedAt": "2026-02-23T02:38:42.742Z"
+  },
+  "version": "V15.0"
+}

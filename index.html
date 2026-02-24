@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUPERMEN V16.0 — Signal Dashboard</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+  <style>
+    :root {
+      --bg:       #0a0c0f;
+      --bg2:      #0f1215;
+      --bg3:      #141820;
+      --border:   #1e2530;
+      --text:     #c8d0dc;
+      --muted:    #4a5568;
+      --green:    #00e676;
+      --green-bg: rgba(0, 230, 118, 0.06);
+      --red:      #ff1744;
+      --red-bg:   rgba(255, 23, 68, 0.06);
+      --blue:     #00b0ff;
+      --gold:     #ffd600;
+      --accent:   #00e5ff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Space Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,12,15,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.3rem;
+      letter-spacing: 0.05em;
+      color: #fff;
+    }
+    .brand span { color: var(--accent); }
+
+    .header-right {
+      display: flex; align-items: center; gap: 20px;
+      font-size: 0.72rem; color: var(--muted);
+    }
+
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    #lastUpdate { color: var(--accent); }
+
+    /* ── MAIN ── */
+    main { max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── SECTION ── */
+    .section { margin-bottom: 40px; }
+
+    .section-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .icon-crypto { background: rgba(255,214,0,0.12); color: var(--gold); }
+    .icon-bist   { background: rgba(0,176,255,0.12); color: var(--blue); }
+    .icon-forex  { background: rgba(0,230,118,0.12); color: var(--green); }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1.05rem;
+      color: #fff;
+    }
+
+    .section-count {
+      margin-left: auto;
+      font-size: 0.72rem; color: var(--muted);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 3px 10px; border-radius: 20px;
+    }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    thead tr {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+    }
+
+    thead th {
+      padding: 11px 16px;
+      text-align: left;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(30,37,48,0.7);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg3); }
+
+    tbody tr.long-row  { background: var(--green-bg); border-left: 2px solid var(--green); }
+    tbody tr.short-row { background: var(--red-bg);   border-left: 2px solid var(--red); }
+    tbody tr.long-row:hover  { background: rgba(0,230,118,0.10); }
+    tbody tr.short-row:hover { background: rgba(255,23,68,0.10); }
+
+    td {
+      padding: 10px 16px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .sym {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 0.88rem;
+    }
+    .sym.long  { color: var(--green); }
+    .sym.short { color: var(--red); }
+
+    .dir-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .dir-badge.long  { background: rgba(0,230,118,0.15); color: var(--green); }
+    .dir-badge.short { background: rgba(255,23,68,0.15);  color: var(--red); }
+
+    .price-cell { font-variant-numeric: tabular-nums; }
+
+    .tp1-val  { color: var(--green); }
+    .tp2-val  { color: #69f0ae; }
+    .sl-val   { color: var(--red); }
+
+    .stoch-cell {
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .stoch-pill {
+      font-size: 0.65rem;
+      padding: 2px 8px; border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--muted);
+    }
+    .stoch-pill.buy  { border-color: var(--green); color: var(--green); background: rgba(0,230,118,0.08); }
+    .stoch-pill.sell { border-color: var(--red);   color: var(--red);   background: rgba(255,23,68,0.08); }
+
+    .pivot-cell { display: flex; gap: 4px; }
+    .pv-chip {
+      font-size: 0.62rem; padding: 2px 7px; border-radius: 10px;
+      font-weight: 700; letter-spacing: 0.04em;
+    }
+    .pv-chip.S { background: rgba(0,230,118,0.15); color: var(--green); }
+    .pv-chip.R { background: rgba(255,23,68,0.15);  color: var(--red); }
+    .pv-chip.N { background: var(--bg3); color: var(--muted); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center; padding: 48px;
+      color: var(--muted); font-size: 0.85rem;
+    }
+    .empty-state i { font-size: 2rem; margin-bottom: 12px; display: block; opacity: .4; }
+
+    /* ── LOADING ── */
+    .loading-state {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; padding: 48px;
+      color: var(--muted); font-size: 0.82rem;
+    }
+
+    .spinner {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      min-width: 140px;
+    }
+    .stat-label { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .stat-value { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; color: #fff; margin-top: 2px; }
+    .stat-value.green { color: var(--green); }
+    .stat-value.red   { color: var(--red); }
+    .stat-value.blue  { color: var(--blue); }
+
+    @media (max-width: 600px) {
+      header { padding: 12px 16px; }
+      main   { padding: 20px 12px; }
+      td, th { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">SUPER<span>MEN</span> V16.0</div>
+    <div class="header-right">
+      <div class="live-dot"></div>
+      <span id="lastUpdate">Yükleniyor...</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Toplam Sinyal</div>
+        <div class="stat-value" id="stat-total">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">AL Sinyali</div>
+        <div class="stat-value green" id="stat-long">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">SAT Sinyali</div>
+        <div class="stat-value red" id="stat-short">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Kripto</div>
+        <div class="stat-value blue" id="stat-crypto">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">BIST</div>
+        <div class="stat-value blue" id="stat-bist">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Forex</div>
+        <div class="stat-value blue" id="stat-forex">—</div>
+      </div>
+    </div>
+
+    <!-- CRYPTO -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon icon-crypto"><i class="fab fa-bitcoin"></i></div>
+        <div class="section-title">KRİPTO PARALAR</div>
+        <div class="section-count" id="cnt-crypto">—</div>
+      </div>
+      <div id="crypto-container">
+        <div class="loading-state"><div class="spinner"></div> Yükleniyor...</div>
+      </div>
+    </div>
+
+    <!-- BIST -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon icon-bist"><i class="fas fa-chart-line"></i></div>
+        <div class="section-title">BIST HİSSELERİ</div>
+        <div class="section-count" id="cnt-bist">—</div>
+      </div>
+      <div id="bist-container">
+        <div class="loading-state"><div class="spinner"></div> Yükleniyor...</div>
+      </div>
+    </div>
+
+    <!-- FOREX -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon icon-forex"><i class="fas fa-dollar-sign"></i></div>
+        <div class="section-title">FOREX PARİTELERİ</div>
+        <div class="section-count" id="cnt-forex">—</div>
+      </div>
+      <div id="forex-container">
+        <div class="loading-state"><div class="spinner"></div> Yükleniyor...</div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    SUPERMEN SCANNER &copy; 2026 &nbsp;|&nbsp; St AND Piz
+  </footer>
+
+  <script>
+    // ── Fiyat formatlama ──────────────────────────────────────────
+    function fmtPrice(price) {
+      if (price == null || isNaN(price)) return '—';
+      if (price === 0) return '0';
+      const abs = Math.abs(price);
+      if (abs >= 1000)   return price.toFixed(2);
+      if (abs >= 1)      return price.toFixed(4);
+      if (abs >= 0.01)   return price.toFixed(6);
+      return price.toFixed(8);
+    }
+
+    // ── Yön tespiti (sayı 1/-1 veya string "BUY"/"SELL") ─────────
+    function isLong(direction) {
+      return direction === 1 || direction === "BUY" || direction === "LONG" || direction === "AL";
+    }
+
+    // ── Stoch string'ini pill'lere çevir ─────────────────────────
+    // stochKStr örneği: "56/19/56" veya "B/S/B"
+   function renderStoch(s) {
+  return '<span style="color:var(--muted)">—</span>';
+}
+
+    // ── Pivot zone'u çip olarak göster ───────────────────────────
+    // pivotStr örneği: "SSS" veya "RRR" veya "SR."
+    function renderPivot(s) {
+      if (!s || !s.pivotStr) return '<span style="color:var(--muted)">—</span>';
+      const chars   = String(s.pivotStr).split('');
+      const tfNames = ['H4','D1','W1'];
+      let html = '<div class="pivot-cell">';
+      chars.forEach((c, i) => {
+        const tf  = tfNames[i] || ('TF'+(i+1));
+        const cls = c === 'S' ? 'S' : c === 'R' ? 'R' : 'N';
+        const lbl = c === 'S' ? 'SUP' : c === 'R' ? 'RES' : '—';
+        html += `<span class="pv-chip ${cls}" title="${tf}">${lbl}</span>`;
+      });
+      html += '</div>';
+      return html;
+    }
+
+    // ── Tablo render ──────────────────────────────────────────────
+    function renderTable(containerId, signals, marketType) {
+      const container = document.getElementById(containerId);
+
+      if (!signals || signals.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-satellite-dish"></i>
+            Şu an uygun sinyal bulunamadı.
+          </div>`;
+        return;
+      }
+
+      let html = `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Sembol</th>
+                <th>Yön</th>
+                <th>Giriş</th>
+                <th>TP 1</th>
+                <th>TP 2</th>
+                <th>Stop</th>
+                <th>St</th>
+                <th>Piz</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+      signals.forEach(s => {
+        const long     = isLong(s.direction);
+        const rowCls   = long ? 'long-row'  : 'short-row';
+        const symCls   = long ? 'long'      : 'short';
+        const badgeCls = long ? 'long'      : 'short';
+        const badgeTxt = long ? '▲ AL'      : '▼ SAT';
+
+        const entry = s.entryPrice ?? s.entry ?? s.price ?? null;
+
+        html += `
+          <tr class="${rowCls}">
+            <td><span class="sym ${symCls}">${s.symbol || '—'}</span></td>
+            <td><span class="dir-badge ${badgeCls}">${badgeTxt}</span></td>
+            <td class="price-cell">${fmtPrice(entry)}</td>
+            <td class="price-cell tp1-val">${fmtPrice(s.tp1)}</td>
+            <td class="price-cell tp2-val">${fmtPrice(s.tp2)}</td>
+            <td class="price-cell sl-val">${fmtPrice(s.sl)}</td>
+            <td>${renderStoch(s)}</td>
+            <td>${renderPivot(s)}</td>
+          </tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    // ── Stats güncelle ────────────────────────────────────────────
+    function updateStats(data) {
+      const crypto = data.crypto || [];
+      const bist   = data.bist   || [];
+      const forex  = data.forex  || [];
+      const all    = [...crypto, ...bist, ...forex];
+      const longC  = all.filter(s => isLong(s.direction)).length;
+      const shortC = all.length - longC;
+
+      document.getElementById('stat-total').textContent  = all.length;
+      document.getElementById('stat-long').textContent   = longC;
+      document.getElementById('stat-short').textContent  = shortC;
+      document.getElementById('stat-crypto').textContent = crypto.length;
+      document.getElementById('stat-bist').textContent   = bist.length;
+      document.getElementById('stat-forex').textContent  = forex.length;
+
+      document.getElementById('cnt-crypto').textContent = crypto.length + ' sinyal';
+      document.getElementById('cnt-bist').textContent   = bist.length  + ' sinyal';
+      document.getElementById('cnt-forex').textContent  = forex.length + ' sinyal';
+    }
+
+    // ── Ana yükleme ───────────────────────────────────────────────
+    async function loadData() {
+      try {
+        const url = 'https://raw.githubusercontent.com/kanca2428/supermen-scanner/main/data/signals.json?t=' + Date.now();
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        document.getElementById('lastUpdate').textContent =
+          'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR');
+
+        updateStats(data);
+        renderTable('crypto-container', data.crypto, 'crypto');
+        renderTable('bist-container',   data.bist,   'bist');
+        renderTable('forex-container',  data.forex,  'forex');
+
+      } catch (err) {
+        console.error('Yükleme hatası:', err);
+        document.getElementById('lastUpdate').textContent = '⚠ Veri alınamadı';
+        const errHtml = `<div class="empty-state" style="color:var(--red)">
+          <i class="fas fa-exclamation-triangle"></i>
+          Sinyal verisi yüklenemedi. Lütfen GitHub Actions çalışıyor mu kontrol edin.
+        </div>`;
+        ['crypto-container','bist-container','forex-container'].forEach(id => {
+          document.getElementById(id).innerHTML = errHtml;
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+    setInterval(loadData, 60000);
+  </script>
+</body>
+</html>
