@@ -2,8 +2,33 @@ name: SUPERMEN V16.0 Scanner
 
 on:
   schedule:
-    # Her saat başı çalış (UTC) — Türkiye saati: 00:00, 01:00, 02:00, ... , 23:00
-    - cron: '0 * * * *'
+    # ═══════════════════════════════════════════════════════════
+    # BİST SEANS SAATLERİ (Türkiye Saati → UTC)
+    # ═══════════════════════════════════════════════════════════
+    # SABAH SEANSININ BAŞI: 10:00 TR = 07:00 UTC
+    - cron: '0 7 * * 1-5'
+    
+    # SEANS İÇİ TARAMALAR (her saat)
+    - cron: '0 8 * * 1-5'
+    - cron: '0 9 * * 1-5'
+    - cron: '0 10 * * 1-5'
+    - cron: '0 11 * * 1-5'
+    - cron: '0 12 * * 1-5'
+    - cron: '0 13 * * 1-5'
+    - cron: '0 14 * * 1-5'
+    
+    # KAPANIŞ: 18:00 TR = 15:00 UTC
+    - cron: '0 15 * * 1-5'
+    
+    # ═══════════════════════════════════════════════════════════
+    # KRİPTO VE FOREX İÇİN EK TARAMALAR (7/24)
+    # ═══════════════════════════════════════════════════════════
+    # Hafta sonu da çalışacak (kripto için)
+    - cron: '0 0 * * 0,6'   # Gece yarısı (Cumartesi/Pazar)
+    - cron: '0 6 * * 0,6'   # Sabah 06:00
+    - cron: '0 12 * * 0,6'  # Öğlen
+    - cron: '0 18 * * 0,6'  # Akşam
+
   workflow_dispatch:
     inputs:
       market:
@@ -11,9 +36,9 @@ on:
         required: false
         default: 'all'
 
-# ── KRİTİK: Aynı anda sadece 1 job çalışsın ──────────────────────
-# Önceki tarama bitmeden yeni cron gelirse iptal edilir (cancel-in-progress)
-# Bu olmadan mesajlar saatler arayla karışıyordu!
+# ═══════════════════════════════════════════════════════════════
+# CONCURRENCY — Aynı anda tek job çalışsın
+# ═══════════════════════════════════════════════════════════════
 concurrency:
   group: scanner
   cancel-in-progress: true
@@ -21,7 +46,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 90   # 90 dakika sonra job zorla sonlanır
+    timeout-minutes: 90
 
     permissions:
       contents: write
@@ -41,17 +66,65 @@ jobs:
         run: npm install
 
       - name: 🕐 Tarama Saati (TR)
+        id: time-check
         run: |
-          echo "UTC : $(date -u '+%Y-%m-%d %H:%M:%S')"
-          echo "TR  : $(TZ='Europe/Istanbul' date '+%Y-%m-%d %H:%M:%S')"
+          UTC_TIME=$(date -u '+%Y-%m-%d %H:%M:%S')
+          TR_TIME=$(TZ='Europe/Istanbul' date '+%Y-%m-%d %H:%M:%S')
+          TR_HOUR=$(TZ='Europe/Istanbul' date '+%H')
+          TR_DAY=$(TZ='Europe/Istanbul' date '+%u')  # 1=Pzt, 7=Paz
+          
+          echo "UTC  : $UTC_TIME"
+          echo "TR   : $TR_TIME"
+          echo "Saat : $TR_HOUR"
+          echo "Gün  : $TR_DAY"
+          
+          # Çıktıları sonraki adımlar için kaydet
+          echo "tr_hour=$TR_HOUR" >> $GITHUB_OUTPUT
+          echo "tr_day=$TR_DAY" >> $GITHUB_OUTPUT
+
+      - name: 🔍 Market Seçimi (Seans Kontrolü)
+        id: market-select
+        run: |
+          TR_HOUR=${{ steps.time-check.outputs.tr_hour }}
+          TR_DAY=${{ steps.time-check.outputs.tr_day }}
+          INPUT_MARKET="${{ github.event.inputs.market || 'all' }}"
+          
+          # Manuel çalıştırmada input'u kullan
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "market=$INPUT_MARKET" >> $GITHUB_OUTPUT
+            echo "📌 Manuel çalıştırma: $INPUT_MARKET"
+            exit 0
+          fi
+          
+          # ═══════════════════════════════════════════════════
+          # HAFTA SONU (Cumartesi/Pazar) — SADECE KRİPTO
+          # ═══════════════════════════════════════════════════
+          if [ "$TR_DAY" = "6" ] || [ "$TR_DAY" = "7" ]; then
+            echo "market=crypto" >> $GITHUB_OUTPUT
+            echo "📌 Hafta sonu: Sadece CRYPTO taranacak"
+            exit 0
+          fi
+          
+          # ═══════════════════════════════════════════════════
+          # HAFTA İÇİ (Pzt-Cuma) — SEANS KONTROLÜ
+          # ═══════════════════════════════════════════════════
+          
+          # BİST SEANS SAATLERİ (TR): 10:00 - 18:00
+          if [ "$TR_HOUR" -ge 10 ] && [ "$TR_HOUR" -lt 18 ]; then
+            echo "market=all" >> $GITHUB_OUTPUT
+            echo "📌 BİST Seansı AÇIK: Tüm marketler taranacak (crypto+bist+forex)"
+          else
+            echo "market=crypto" >> $GITHUB_OUTPUT
+            echo "📌 BİST Seansı KAPALI: Sadece CRYPTO+FOREX taranacak"
+          fi
 
       - name: 🚀 Run Scanner
-        timeout-minutes: 80   # Node süreci için ayrı timeout
+        timeout-minutes: 80
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          MARKET="${{ github.event.inputs.market || 'all' }}"
+          MARKET="${{ steps.market-select.outputs.market }}"
           echo "🔍 Tarama başlıyor: $MARKET"
           node src/scanner.js $MARKET
 
